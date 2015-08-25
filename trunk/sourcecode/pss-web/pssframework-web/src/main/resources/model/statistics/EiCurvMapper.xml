@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="EiCurv">
+	<resultMap id="EiCurvResult" type="org.pssframework.model.statistics.EiCurv">
+	</resultMap>
+
+	<sql id="EiCurvColumns"><![CDATA[m.GP_ID gpId,d.DATA_TIME dataTime,d.ASSET_NO assetNo,
+	P_ACT_TOTAL*1 PActTotal, P_ACT_SHARP*1 PActSharp,P_ACT_PEAK*1 PActPeak,P_ACT_LEVEL*1 PActLevel,P_ACT_VALLEY*1 PActValley,
+	I_ACT_TOTAL*1 IActTotal, I_ACT_SHARP*1 IActSharp,I_ACT_PEAK*1 IActPeak,I_ACT_LEVEL*1 IActLevel,I_ACT_VALLEY*1 IActValley,
+	P_REACT_TOTAL*1 PReactTotal,P_REACT_SHARP*1 PReactSharp,P_REACT_PEAK*1 PReactPeak,P_REACT_LEVEL*1 PReactLevel,P_REACT_VALLEY*1 PReactValley,
+	I_REACT_TOTAL*1 IReactTotal,I_REACT_SHARP*1 IReactSharp,I_REACT_PEAK*1 IReactPeak,I_REACT_LEVEL*1 IReactLevel,I_REACT_VALLEY*1 IReactValley,
+	d.TOTAL_TIMES totalTimes, m.CT_TIMES ctTimes, m.PT_TIMES ptTimes, m.TG_NO tgNo, m.TG_NAME tgName, m.ORG_NO orgNo, m.ORG_NAME orgName]]></sql>
+	<sql id="EiCurvDynamicWhere">
+		<choose>
+			<when test="orgId != null and orgId != 0">and exists (select 1 from o_org s,o_org p where p.org_Id = #{orgId} and s.org_no like p.org_no||'%' and s.org_id = m.org_id )</when>
+		</choose>
+		<choose>
+			<when test="tgId != null and tgId != -1">and object_Id = #{tgId} and gp_type='2'</when>
+		</choose>
+		<choose>
+			<when test="ddate != null">and d.ddate = to_char(to_date(#{ddate},'yyyy-mm-dd'),'yyyymmdd')</when>
+			<otherwise>and d.ddate is null</otherwise>
+		</choose>
+	</sql>
+	<select id="count" resultType="long">
+		<![CDATA[select count(1) from D_EI_CURV_C d, v_meter m where m.gp_id= d.gp_id]]>
+		<include refid="EiCurvDynamicWhere" />
+	</select>
+	<select id="pageSelect" resultMap="EiCurvResult">
+		select
+		<include refid="EiCurvColumns" />
+		<![CDATA[from D_EI_CURV_C d, v_meter m where m.gp_id= d.gp_id ]]>
+		<include refid="EiCurvDynamicWhere" />
+		<if test="sortColumns != null and sortColumns.length() != 0">order by ${sortColumns}</if>
+	</select>
+</mapper>

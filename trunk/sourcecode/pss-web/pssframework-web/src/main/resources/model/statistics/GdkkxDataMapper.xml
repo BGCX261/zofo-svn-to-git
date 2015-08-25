@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="GdkkxData">
+    <resultMap id="GdkkxDataResult" type="org.pssframework.model.statistics.GdkkxData">
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="GdkkxDataColumns">
+        <![CDATA[
+            d.GP_ID gpId, d.DATA_TIME dataTime, d.DDATE ddate, p.ORG_ID orgId, p.ORG_NO orgNo, p.ORG_NAME orgName, p.PS_ID psId, p.PS_NAME psName, p.TG_NO tgNo, p.TG_NAME tgName, p.ORG_ID orgId, p.ORG_NO orgNo, p.ORG_NAME orgName, p.ASSET_NO assetNo, 
+            d.EVENT_COUNT eventCount, d.EVENT_00_COUNT event00Count, d.EVENT_01_COUNT event01Count, d.EVENT_02_COUNT event02Count, d.EVENT_03_COUNT event03Count, 
+            d.EVENT_04_COUNT event04Count, d.EVENT_05_COUNT event05Count, d.EVENT_06_COUNT event06Count, d.EVENT_07_COUNT event07Count, d.EVENT_08_COUNT event08Count, 
+            d.EVENT_09_COUNT event09Count, d.EVENT_10_COUNT event10Count, d.EVENT_11_COUNT event11Count, d.LOCK_COUNT lockCount, d.POWERCUT_COUNT powercutCount, 
+            d.POWERCUTMINUTES powercutMinutes, d.TOTALMINITES totalMinutes, d.POWERSUPPLYRATE powerSupplyRate
+        ]]>
+    </sql>
+    <sql id="GdkkxDataDynamicWhere">
+        <!-- ognl访问静态方法的表达式 为@class@method(args),以下为调用rapid中的Ognl.isNotEmpty()方法,还有其它方法如isNotBlank()可以使用，具体请查看Ognl类 -->
+        <choose>
+            <when test="orgId != null and orgId != 0">and exists (select 1 from o_org s1,o_org p1 where p1.org_Id = #{orgId} and s1.org_no like p1.org_no||'%' and s1.org_id = p.org_id)</when>
+        </choose>
+        <choose>
+            <when test="tgId != null and tgId != -1">and d.tg_id = #{tgId}</when>
+        </choose>
+        <choose>
+            <when test="sdate != null and edate != null"><![CDATA[and d.ddate >= to_char(to_date(#{sdate},'yyyy-mm-dd'),'yyyymmdd') and d.ddate < to_char(to_date(#{edate},'yyyy-mm-dd'),'yyyymmdd') + 1]]></when>
+            <otherwise><![CDATA[and d.ddate is null]]></otherwise>
+        </choose>
+    </sql>
+    <select id="count" resultType="long">
+        <![CDATA[select count(1) from D_GDKKL_DAY d, V_PS p, G_TG t where p.gp_id = d.gp_id and t.tg_id = d.tg_id ]]>
+        <include refid="GdkkxDataDynamicWhere" />
+    </select>
+    <!-- 分页查询已经使用Dialect进行分页,也可以不使用Dialect直接编写分页 因为分页查询将传 #offset#,#pageSize#,#lastRows# 三个参数,不同的数据库可以根于此三个参数属性应用不同的分页实现 -->
+    <select id="pageSelect" resultMap="GdkkxDataResult">
+        select
+        <include refid="GdkkxDataColumns" />
+        <![CDATA[from D_GDKKL_DAY d, V_PS p, G_TG t where p.gp_id = d.gp_id and t.tg_id = d.tg_id ]]>
+        <include refid="GdkkxDataDynamicWhere" />
+        <if test="sortColumns != null and sortColumns.length() != 0">order by ${sortColumns}</if>
+    </select>
+</mapper>

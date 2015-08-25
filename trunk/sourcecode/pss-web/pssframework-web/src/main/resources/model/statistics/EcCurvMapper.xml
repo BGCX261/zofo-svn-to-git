@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="EcCurv">
+	<resultMap id="EcCurvResult" type="org.pssframework.model.statistics.EcCurv">
+	</resultMap>
+
+	<sql id="EcCurvColumns">
+		<![CDATA[
+		  m.GP_ID gpId,d.DATA_TIME dataTime,d.ASSET_NO assetNo,
+		  d.ECUR_A*d.CT_TIMES ecurA,d.ECUR_B*d.CT_TIMES ecurB,d.ECUR_C*d.CT_TIMES ecurC,
+		  d.VOLT_B*d.PT_TIMES voltB,d.VOLT_A*d.PT_TIMES voltA,d.VOLT_C*d.PT_TIMES voltC,
+		  d.CT_TIMES ctTimes, d.PT_TIMES ptTimes, m.TG_NO tgNo, m.TG_NAME tgName,
+		  m.ORG_NO orgNo, m.ORG_NAME orgName
+		]]></sql>
+	<sql id="EcCurvDynamicWhere">
+		<choose>
+			<when test="orgId != null and orgId != 0">and exists (select 1 from o_org s,o_org p where p.org_Id = #{orgId} and s.org_no like p.org_no||'%' and s.org_id = m.org_id )</when>
+		</choose>
+		<choose>
+			<when test="tgId != null and tgId != -1">and object_Id = #{tgId} and gp_type='2'</when>
+		</choose>
+		<choose>
+			<when test="ddate != null">and d.ddate = to_char(to_date(#{ddate},'yyyy-mm-dd'),'yyyymmdd')</when>
+			<otherwise>and d.ddate is null</otherwise>
+		</choose>
+	</sql>
+	<select id="count" resultType="long">
+		<![CDATA[select count(1) from D_EC_CURV_C d, v_meter m where m.gp_id= d.gp_id]]>
+		<include refid="EcCurvDynamicWhere" />
+	</select>
+	<select id="pageSelect" resultMap="EcCurvResult">
+		select
+		<include refid="EcCurvColumns" />
+		<![CDATA[from D_EC_CURV_C d, v_meter m where m.gp_id= d.gp_id ]]>
+		<include refid="EcCurvDynamicWhere" />
+		<if test="sortColumns != null and sortColumns.length() != 0">order by ${sortColumns}</if>
+	</select>
+</mapper>

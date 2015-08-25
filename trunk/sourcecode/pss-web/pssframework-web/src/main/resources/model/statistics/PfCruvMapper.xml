@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="PfCruv">
+    <resultMap id="PfCruvResult" type="org.pssframework.model.statistics.PfCruv">
+    </resultMap>
+
+    <sql id="PfCruvColumns">
+        <![CDATA[
+            m.GP_ID gpId, d.DATA_TIME dataTime, d.ASSET_NO assetNo, 
+            POWER_FACTOR powerFactor, POWER_FACTOR_A powerFactorA, POWER_FACTOR_B powerFactorB, POWER_FACTOR_C powerFactorC, m.TG_NO tgNo, m.TG_NAME tgName, m.ORG_ID orgId, m.ORG_NO orgNo, m.ORG_NAME orgName
+        ]]>
+    </sql>
+    <sql id="PfCruvDynamicWhere">
+        <choose>
+            <when test="orgId != null and orgId != 0">and exists (select 1 from o_org s,o_org p where p.org_Id = #{orgId} and s.org_no like p.org_no||'%' and s.org_id = m.org_id )</when>
+        </choose>
+        <choose>
+            <when test="tgId != null and tgId != -1">and object_Id = #{tgId} and gp_type='2'</when>
+        </choose>
+        <choose>
+            <when test="ddate != null">and d.ddate = to_char(to_date(#{ddate},'yyyy-mm-dd'),'yyyymmdd')</when>
+            <otherwise>and d.ddate is null</otherwise>
+        </choose>
+    </sql>
+    <select id="count" resultType="long">
+        <![CDATA[select count(1) from D_PF_CRUV_C d, v_meter m where m.gp_id= d.gp_id]]>
+        <include refid="PfCruvDynamicWhere" />
+    </select>
+    <select id="pageSelect" resultMap="PfCruvResult">
+        select
+        <include refid="PfCruvColumns" />
+        <![CDATA[from D_PF_CRUV_C d, v_meter m where m.gp_id= d.gp_id ]]>
+        <include refid="PfCruvDynamicWhere" />
+        <if test="sortColumns != null and sortColumns.length() != 0">order by ${sortColumns}</if>
+    </select>
+</mapper>
